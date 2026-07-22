@@ -1,5 +1,8 @@
 # Hybrid Intrusion Detection System — ML Pipeline (CICIDS2017)
 
+Machine-learning pipeline supporting
+
+This repository contains the code used to train the machine-learning models on the **CICIDS2017** dataset and to run the **hybrid detection pipeline**, which combines the Suricata rule-based alerts with the trained Random Forest models on locally captured network traffic.
 
 ---
 
@@ -121,9 +124,29 @@ The trained models, scalers, and label encoder are hosted on Google Drive (too l
 
 ## Dataset
 
-This project uses the **CICIDS2017** dataset, created by the Canadian Institute for Cybersecurity (University of New Brunswick). The raw dataset is not included in this repository due to its size; it can be obtained from the official source:
+This project uses two datasets:
+
+### 1. CICIDS2017 (training)
+
+Created by the Canadian Institute for Cybersecurity (University of New Brunswick). The raw dataset is not included in this repository due to its size; it can be obtained from the official source:
 
 **https://www.unb.ca/cic/datasets/ids-2017.html**
+
+### 2. Laboratory-captured traffic (local evaluation)
+
+Five traffic scenarios were generated in an isolated VirtualBox laboratory (Kali Linux attacker ↔ DVWA victim, connected through a host-only network with no external access) and are provided in [`data/`](data/) for reproducibility:
+
+| Scenario | Flow CSV | Description |
+|---|---|---|
+| Benign browsing | `data/flows/benign_browsing_flows.csv` | Normal interaction with DVWA (login, navigation, form submission). |
+| Nmap scan | `data/flows/nmap_scan_flows.csv` | Port and service reconnaissance against the victim. |
+| SQL injection | `data/flows/sqlmap_sql_injection_flows.csv` | Tautology-based SQL injection against the DVWA SQL Injection page. |
+| Reflected XSS | `data/flows/xss_reflected_flows.csv` | Reflected Cross-Site Scripting payload submission. |
+| HTTP flood | `data/flows/http_flood_flows.csv` | High request-rate flood against the DVWA web server. |
+
+Each CSV is the direct output of `convert_nfstream_to_cicids_like.py` (i.e., the format consumed by `hybrid_predict.py`). Corresponding hybrid prediction outputs for each scenario are provided in `data/results/`.
+
+All traffic was captured and generated exclusively inside the private, isolated laboratory described in the thesis (Chapter 3, "Ethical and Safety Considerations"); no external network or third-party system was targeted at any point.
 
 ---
 
