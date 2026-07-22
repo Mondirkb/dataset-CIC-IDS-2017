@@ -141,14 +141,9 @@ Full methodology, preprocessing details, and discussion are provided in the acco
 
 ---
 
-## Author
-
-**Moundir Chemseddine Kebir**
-Master in Telecommunications Engineering, Universidad de Jaén
-Supervisor: Juan Carlos Cuevas Martínez
 
 ---
 
 ## License
 
-This project is released for academic purposes as part of a Master's thesis. See `LICENSE` for details (or contact the author for reuse permissions).
+This project is released for academic purposes . See `LICENSE` for details (or contact the author for reuse permissions).
