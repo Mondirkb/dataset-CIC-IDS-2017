@@ -1,8 +1,5 @@
 # Hybrid Intrusion Detection System — ML Pipeline (CICIDS2017)
 
-Machine-learning pipeline supporting the Master's thesis **"Machine Learning-Based Hybrid Intrusion Detection System for Small-Business and Academic Networks"** (University of Jaén, Escuela Politécnica Superior de Linares).
-
-This repository contains the code used to train the machine-learning models on the **CICIDS2017** dataset and to run the **hybrid detection pipeline**, which combines the Suricata rule-based alerts with the trained Random Forest models on locally captured network traffic.
 
 ---
 
