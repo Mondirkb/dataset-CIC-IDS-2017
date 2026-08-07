@@ -2,6 +2,7 @@
 
 This repository contains the code used to train the machine-learning models on the **CICIDS2017** dataset and to run the **hybrid detection pipeline**, which combines Suricata rule-based alerts with trained Random Forest models on locally captured network traffic.
 
+Accompanying Master's thesis: *Machine Learning-Based Hybrid Intrusion Detection System for Small-Business and Academic Networks*, Universidad de Jaén.
 
 ---
 
@@ -180,19 +181,39 @@ All traffic was captured exclusively inside the private, isolated laboratory; no
 
 ## Results
 
-### CICIDS2017 held-out test set
+The evaluation has two distinct stages, and both matter. The first establishes that the models learn correctly from the benchmark; the second tests whether that performance transfers to a different environment.
+
+### Stage 1 — CICIDS2017 held-out test set
+
+The models were trained on ~2.83 million CICIDS2017 flows (15 attack categories) and evaluated on a stratified 20% hold-out.
 
 | Model | Accuracy | Precision | Recall | F1 | FPR |
 |---|---|---|---|---|---|
-| Binary Random Forest | 98.59% | 94.51% | 98.55% | 96.49% | 1.40% |
+| **Binary Random Forest** | **98.59%** | 94.51% | 98.55% | 96.49% | **1.40%** |
 | Binary Neural Network | 86.08% | 58.90% | 96.83% | 73.25% | 16.55% |
 | Multi-class Random Forest | 93.90% | 98.00%\* | 94.00%\* | 96.00%\* | — |
 
-\* weighted average across 15 classes. 5-fold cross-validation confirms stability (binary: 98.60% ± 0.01%).
+\* weighted average across 15 classes.
 
-### Local laboratory validation
+The binary Random Forest is the strongest model, clearly outperforming the Neural Network. **5-fold cross-validation confirms this is stable, not a lucky split** (binary: 98.60% ± 0.01% accuracy). Per attack category, the multi-class model detects the high-support classes strongly — for example **CICIDS2017 DDoS at 99.86%** and PortScan at 99.86% — while struggling on minority classes (Heartbleed, web attacks) that have very few training samples.
 
-Benchmark performance does **not** transfer to locally captured traffic. Using exact five-tuple correlation:
+Evaluated directly on the attack classes that have a local laboratory counterpart, the binary model detects every one of them on CICIDS2017:
+
+| CICIDS2017 attack class | Training records | Detected as ATTACK |
+|---|---|---|
+| FTP-Patator | 7,938 | 98.69% |
+| Web Attack – XSS | 652 | 78.83% |
+| Web Attack – Brute Force | 1,507 | 74.98% |
+| Web Attack – SQL Injection | 21 | 52.38% |
+| SSH-Patator | 5,897 | 50.99% |
+
+Benign traffic in the same captures was flagged at 1.16%, consistent with the 1.40% FPR above. The two weakest classes are explicable: SQL injection has only 21 training records, and SSH-Patator is encrypted, so its brute-force flows resemble ordinary encrypted sessions at the flow level. **The essential point is that none of these rates is zero** — the model demonstrably recognises these attack families when the traffic comes from CICIDS2017. This is the baseline against which the local 0% results (Stage 2) must be read.
+
+**This stage confirms the pipeline works: it detects attacks, classifies their category, and keeps false alarms low, on traffic drawn from the same distribution as its training data.**
+
+### Stage 2 — Local laboratory validation
+
+The same models were then applied to traffic captured in the isolated laboratory. Benchmark performance does **not** transfer. Using exact five-tuple correlation:
 
 | Scenario | Flows | Any Suricata alert | Attack-specific signature | ML |
 |---|---|---|---|---|
@@ -204,13 +225,13 @@ Benchmark performance does **not** transfer to locally captured traffic. Using e
 
 Three findings:
 
-1. **The ML layer flagged no local flow in any scenario**, despite detecting CICIDS2017 DDoS at 99.86% with the same model and the same ten features. The cause is a domain shift: the model learned DDoS as a *bidirectional exchange pattern* (mean 4.47 forward vs. 3.26 backward packets), not as packet volume. A unidirectional flood does not match that representation regardless of size.
+1. **The ML layer flagged no local flow in any scenario**, despite detecting CICIDS2017 DDoS at 99.86% with the *same model and the same ten features* (Stage 1). The cause is a domain shift: the model learned DDoS as a *bidirectional exchange pattern* (mean 4.47 forward vs. 3.26 backward packets), not as packet volume. A unidirectional flood does not match that representation regardless of size.
 
 2. **Alert coverage is not attack recognition.** The HTTP-flood scenario shows an alert on 99.79% of flows, but every one is `SURICATA HTTP Response excessive header repetition` (SID 2221036) — a generic protocol-decode event raised on the server's response. Benign browsing produced alerts on 18.52% of its flows, proportionally more than the Nmap scan, confirming these events are not discriminative. The loaded rule set contained 575 XSS signatures; none matched the reflected-XSS payload.
 
-3. **The gap is closable but does not generalise.** Merging 65,543 local SynFlood flows into the CICIDS2017 training set raised local detection from 0% to 99.99% at under two points of benchmark accuracy. The same retrained model classified only 4 of 7 flows from `nping` — a different tool executing the same technique — because `nping` used two source ports for 200,000 packets while `hping3` varied its source port, collapsing the capture into 7 flows instead of 65,543. This is a difference in flow construction upstream of the model entirely.
+3. **The gap is closable but does not generalise.** Merging 65,543 local SynFlood flows into the CICIDS2017 training set raised local detection from 0% to 99.99% at under two points of benchmark accuracy, while CICIDS2017 DDoS detection was unaffected (99.86% → 99.92%). The same retrained model classified only 4 of 7 flows from `nping` — a different tool executing the same technique — because `nping` used two source ports for 200,000 packets while `hping3` varied its source port, collapsing the capture into 7 flows instead of 65,543. This is a difference in flow construction upstream of the model entirely.
 
-Full methodology and discussion are in the accompanying thesis.
+**The two stages together are the point of the thesis: benchmark performance is real but is not deployment performance. The dataset provides the foundation; local adaptation provides the transfer.** Full methodology and discussion are in the accompanying thesis.
 
 ---
 
